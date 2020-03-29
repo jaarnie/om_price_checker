@@ -1,0 +1,20 @@
+default: &default
+  adapter: sqlite3
+  encoding: unicode
+  # For details on connection pooling, see rails configuration guide
+  # http://guides.rubyonrails.org/configuring.html#database-pooling
+  pool: 5
+  # username: my_username
+  # password: my_password
+
+development:
+  <<: *default
+  database: "db/development.sqlite"
+
+test:
+  <<: *default
+  database: "om_price_checker_test"
+
+production:
+  <<: *default
+  database: "om_price_checker_prod"
