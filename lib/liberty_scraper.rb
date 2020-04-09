@@ -5,19 +5,19 @@ require 'httparty'
 require 'nokogiri'
 
 class LibertyScraper
-  attr_accessor :document
+  attr_accessor :document, :names
 
   COLLECT_TEXT = ->(x) { x.text.split.join(' ') }
 
   def initialize
-    # url = "https://www.omorovicza.com/uk/"
     url = 'https://www.libertylondon.com/uk/search?q=Omorovicza'
     unparsed_document = HTTParty.get(url)
     @document ||= Nokogiri::HTML(unparsed_document)
+    @names = document.css('.product-name').map(&COLLECT_TEXT)
   end
 
   def scrape_data
-    names = document.css('.product-name').map(&COLLECT_TEXT)
+    names = @names
     details = document.css('.product-description').map(&COLLECT_TEXT)
     links = document.css('.quick-view').map { |x| x.attributes['href'].value }
     images = document.css('.alt-img').map { |x| x['data-src'] }
@@ -29,28 +29,43 @@ class LibertyScraper
     create_hash_array(names, details, links, images, standard_prices, sale_prices, promo_messages)
   end
 
+  def get_names
+    names
+  end
+
+  def get_savings_percentage(standard_price, sale_price)
+    # strip_numbers = gsub('£', '').to_f
+    standard_price = standard_price.gsub('£', '').to_f
+    sale_price = sale_price.gsub('£', '').to_f
+
+    savings = (sale_price / standard_price * 100) - 100
+    return savings.round.to_s + "%"
+  end
+
+  def show_sale_price(standard_price, sale_price)
+    return sale_price unless sale_price != standard_price
+  end
+
   def create_hash_array(names, details, links, images, standard_prices, sale_prices, promo_messages)
     item_array = []
     names.each_with_index do |value, index|
-      # item_array = [names[index], details[index], links[index], images[index], standard_prices[index], sale_prices[index], promo_messages[index]]
+      sale_price = 'Not on sale' if sale_prices[index] === standard_prices[index]
       item = {
         name: names[index],
         info: {
           details: details[index],
-          link: links[index],
+          link: "https://www.libertylondon.com" + links[index],
           image: images[index],
         },
         price: {
-          standard_price: standard_prices[index],
-          sale_price: sale_prices[index],
-          saving_percentage: promo_messages[index],
+          standard_price: standard_prices[index] || sale_prices[index],
+          sale_price: show_sale_price(standard_prices[index], sale_prices[index]),
+          savings_percentage: standard_prices[index] && get_savings_percentage(standard_prices[index], sale_prices[index])
         }
       }
       item_array << item
     end
     item_array
   end
-
-  # scraper = LibertyScraper.new
-  # scraper.scrape_data
 end
+
