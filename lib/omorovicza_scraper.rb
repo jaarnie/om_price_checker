@@ -3,28 +3,23 @@
 require 'httparty'
 require 'nokogiri'
 
-class SpaceNKScraper
+class OmoroviczaScraper
   attr_accessor :document, :names
 
   COLLECT_TEXT = ->(x) { x.text.split.join(' ') }
 
   def initialize
-    url = 'https://www.spacenk.com/uk/en_GB/brands/o/omorovicza/'
-    unparsed_document = HTTParty.get(url)
+    moisturisers_url = 'https://www.omorovicza.com/uk/skincare/moisturisers.html'
+    unparsed_document = HTTParty.get(moisturisers_url)
     @document ||= Nokogiri::HTML(unparsed_document)
-    @names = document.css('.product-tile_name').map(&COLLECT_TEXT)
   end
 
   def scrape_data
-    names = @names
-    links = document.css('.js-set-scroll-value.product-tile_title').map { |x| x['href'] }
-    standard_prices = document.css('.product-sales-price').map(&COLLECT_TEXT)
+    names = document.css('.product-item-link').map(&COLLECT_TEXT)
+    links = document.css('.product.photo.product-item-photo').map { |x| x['href'] }
+    standard_prices = document.css('[data-product-price]').map(&COLLECT_TEXT)
 
     create_hash_array(names, links, standard_prices)
-  end
-
-  def get_names
-    names
   end
 
   def create_hash_array(names, links, standard_prices)
@@ -39,7 +34,7 @@ class SpaceNKScraper
           image: nil
         },
         price: {
-          standard_price: standard_prices[index],
+          standard_price: standard_prices[index].split.last,
           sale_price: nil,
           savings_percentage: nil
         }
