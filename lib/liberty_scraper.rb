@@ -34,28 +34,26 @@ class LibertyScraper
   end
 
   def get_savings_percentage(standard_price, sale_price)
-    # strip_numbers = gsub('£', '').to_f
     standard_price = standard_price.gsub('£', '').to_f
     sale_price = sale_price.gsub('£', '').to_f
 
     savings = (sale_price / standard_price * 100) - 100
-    return savings.round.to_s + "%"
+    savings.round.to_s + '%'
   end
 
   def show_sale_price(standard_price, sale_price)
     return sale_price unless sale_price != standard_price
   end
 
-  def create_hash_array(names, details, links, images, standard_prices, sale_prices, promo_messages)
+  def create_hash_array(names, details, links, images, standard_prices, sale_prices, _promo_messages)
     item_array = []
-    names.each_with_index do |value, index|
-      sale_price = 'Not on sale' if sale_prices[index] === standard_prices[index]
+    names.each_with_index do |_value, index|
       item = {
         name: names[index],
         info: {
           details: details[index],
-          link: "https://www.libertylondon.com" + links[index],
-          image: images[index],
+          link: 'https://www.libertylondon.com' + links[index],
+          image: images[index]
         },
         price: {
           standard_price: standard_prices[index] || sale_prices[index],
@@ -68,4 +66,3 @@ class LibertyScraper
     item_array
   end
 end
-
